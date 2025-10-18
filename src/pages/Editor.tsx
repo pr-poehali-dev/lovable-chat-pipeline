@@ -47,7 +47,8 @@ const Editor = () => {
   const [projectName, setProjectName] = useState('my-project');
   const [isPublishing, setIsPublishing] = useState(false);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
-  const AI_CHAT_URL = 'https://functions.poehali.dev/b7f59477-86f4-4fdc-b075-f609d57e5c73';
+  const [projectId] = useState(1);
+  const AI_PIPELINE_URL = 'https://functions.poehali.dev/31012ebe-64e2-463a-a35f-591c6a85e711';
   const [fileTree, setFileTree] = useState<FileItem[]>([
     {
       name: 'src',
@@ -135,10 +136,13 @@ const Editor = () => {
     setIsLoadingAI(true);
     
     try {
-      const response = await fetch(AI_CHAT_URL, {
+      const response = await fetch(AI_PIPELINE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          project_id: projectId,
+          current_file: selectedFile,
+          current_code: code,
           messages: [...messages, { role: 'user', content: userMessage }]
         })
       });
@@ -150,17 +154,27 @@ const Editor = () => {
           role: 'assistant', 
           content: `⚠️ Ошибка: ${data.error}. Проверь настройки API ключа OpenAI.` 
         }]);
+        toast.error('Ошибка AI');
       } else {
         setMessages(prev => [...prev, { 
           role: 'assistant', 
           content: data.message 
         }]);
+        
+        if (data.has_code && data.code_blocks && data.code_blocks.length > 0) {
+          const firstBlock = data.code_blocks[0];
+          setCode(firstBlock.code);
+          toast.success('Код обновлён автоматически! 🚀', {
+            description: `Применены изменения в ${selectedFile}`
+          });
+        }
       }
     } catch (error) {
       setMessages(prev => [...prev, { 
         role: 'assistant', 
         content: '⚠️ Не могу подключиться к AI. Проверь интернет и API ключ.' 
       }]);
+      toast.error('Ошибка подключения');
     } finally {
       setIsLoadingAI(false);
     }

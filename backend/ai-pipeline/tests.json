@@ -1,0 +1,41 @@
+{
+  "tests": [
+    {
+      "name": "Test OPTIONS request",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Test pipeline with code request",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "project_id": 1,
+        "current_file": "App.tsx",
+        "current_code": "import React from 'react';",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Добавь компонент с кнопкой"
+          }
+        ]
+      },
+      "expectedStatus": 200,
+      "expectedBody": {
+        "message": "string",
+        "code_blocks": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Test empty messages",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "messages": []
+      },
+      "expectedStatus": 400
+    }
+  ]
+}

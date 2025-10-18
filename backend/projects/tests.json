@@ -1,0 +1,35 @@
+{
+  "tests": [
+    {
+      "name": "Test OPTIONS request",
+      "method": "OPTIONS",
+      "path": "/",
+      "expectedStatus": 200
+    },
+    {
+      "name": "Test get all projects",
+      "method": "GET",
+      "path": "/",
+      "expectedStatus": 200,
+      "expectedBody": {
+        "projects": "array"
+      },
+      "bodyMatcher": "partial"
+    },
+    {
+      "name": "Test create project",
+      "method": "POST",
+      "path": "/",
+      "body": {
+        "name": "test-project",
+        "description": "Test project"
+      },
+      "expectedStatus": 201,
+      "expectedBody": {
+        "project": "object",
+        "message": "string"
+      },
+      "bodyMatcher": "partial"
+    }
+  ]
+}
