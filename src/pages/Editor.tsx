@@ -46,6 +46,8 @@ const Editor = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [projectName, setProjectName] = useState('my-project');
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isLoadingAI, setIsLoadingAI] = useState(false);
+  const AI_CHAT_URL = 'https://functions.poehali.dev/b7f59477-86f4-4fdc-b075-f609d57e5c73';
   const [fileTree, setFileTree] = useState<FileItem[]>([
     {
       name: 'src',
@@ -124,19 +126,44 @@ const Editor = () => {
     ));
   };
 
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || isLoadingAI) return;
     
     const userMessage = inputMessage;
-    setMessages([...messages, { role: 'user', content: userMessage }]);
+    setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setInputMessage('');
+    setIsLoadingAI(true);
     
-    setTimeout(() => {
+    try {
+      const response = await fetch(AI_CHAT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [...messages, { role: 'user', content: userMessage }]
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.error) {
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: `⚠️ Ошибка: ${data.error}. Проверь настройки API ключа OpenAI.` 
+        }]);
+      } else {
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: data.message 
+        }]);
+      }
+    } catch (error) {
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: `Понял! Вижу что ты хочешь: "${userMessage}". Сейчас помогу с этим! 🚀` 
+        content: '⚠️ Не могу подключиться к AI. Проверь интернет и API ключ.' 
       }]);
-    }, 1000);
+    } finally {
+      setIsLoadingAI(false);
+    }
   };
 
   const handlePublish = () => {
@@ -376,11 +403,16 @@ const Editor = () => {
                   placeholder="Спроси что-нибудь..."
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  onKeyPress={(e) => e.key === 'Enter' && !isLoadingAI && handleSendMessage()}
+                  disabled={isLoadingAI}
                   className="flex-1"
                 />
-                <Button size="icon" onClick={handleSendMessage}>
-                  <Icon name="Send" size={16} />
+                <Button size="icon" onClick={handleSendMessage} disabled={isLoadingAI}>
+                  {isLoadingAI ? (
+                    <Icon name="Loader2" size={16} className="animate-spin" />
+                  ) : (
+                    <Icon name="Send" size={16} />
+                  )}
                 </Button>
               </div>
             </div>
