@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -16,26 +16,47 @@ interface FileItem {
   children?: FileItem[];
 }
 
-const Index = () => {
-  const [selectedFile, setSelectedFile] = useState<string>('App.tsx');
-  const [code, setCode] = useState(`import React from 'react';
+const LivePreview = ({ code }: { code: string }) => {
+  const renderCode = useMemo(() => {
+    try {
+      return (
+        <div dangerouslySetInnerHTML={{ __html: `<div class="preview-container">${code}</div>` }} />
+      );
+    } catch (error) {
+      return (
+        <div className="text-red-400 p-4">
+          <Icon name="AlertCircle" size={20} className="mb-2" />
+          <p>Ошибка в коде</p>
+        </div>
+      );
+    }
+  }, [code]);
 
-function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-6xl font-bold text-white mb-4">
-          Привет, мир! 🚀
-        </h1>
-        <p className="text-xl text-white/90">
-          Начни редактировать код слева
-        </p>
-      </div>
+    <div className="w-full min-h-full">
+      <style>{`
+        .preview-container > * {
+          all: revert;
+        }
+      `}</style>
+      {renderCode}
     </div>
   );
-}
+};
 
-export default App;`);
+const Index = () => {
+  const [selectedFile, setSelectedFile] = useState<string>('App.tsx');
+  const [code, setCode] = useState(`<div className="min-h-screen bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+  <div className="text-center">
+    <h1 className="text-6xl font-bold text-white mb-4">
+      Привет, мир! 🚀
+    </h1>
+    <p className="text-xl text-white/90">
+      Начни редактировать код слева
+    </p>
+  </div>
+</div>`);
+  const [livePreview, setLivePreview] = useState(true);
 
   const [messages, setMessages] = useState([
     { role: 'assistant', content: 'Привет! Я твой AI-ассистент. Готов помочь с разработкой! 👨‍🚀' }
@@ -179,19 +200,18 @@ export default App;`);
             </TabsContent>
 
             <TabsContent value="preview" className="flex-1 m-0 p-0">
-              <div className="h-full preview-panel flex items-center justify-center">
-                <Card className="w-full max-w-2xl mx-4 p-8">
-                  <div className="min-h-[400px] bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center rounded-lg">
-                    <div className="text-center">
-                      <h1 className="text-6xl font-bold text-white mb-4">
-                        Привет, мир! 🚀
-                      </h1>
-                      <p className="text-xl text-white/90">
-                        Начни редактировать код слева
-                      </p>
-                    </div>
+              <div className="h-full preview-panel flex flex-col">
+                <div className="h-10 px-4 flex items-center gap-2 border-b border-border bg-muted/30">
+                  <Icon name="Monitor" size={14} className="text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Превью</span>
+                  <div className="ml-auto flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Live</span>
+                    <div className={`w-2 h-2 rounded-full ${livePreview ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
                   </div>
-                </Card>
+                </div>
+                <div className="flex-1 overflow-auto p-4">
+                  <LivePreview code={code} />
+                </div>
               </div>
             </TabsContent>
           </Tabs>
